@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#020617">
+<meta name="description" content="Makrocykle L9xx sterowania PRONUM 640FC — ściaga i generator programu CNC, po frezersku">
+<title>Makrocykle L9xx — ściaga i generator</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #020617; color: #e2e8f0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: 40px;
+  }
+  header {
+    background: linear-gradient(90deg, #d97706, #ea580c, #d97706);
+    padding: 18px 16px 14px; color: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+  }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -.3px; }
+  header p { margin: 3px 0 0; font-size: 13px; color: #fef3c7; }
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(2,6,23,.96); backdrop-filter: blur(6px);
+    border-bottom: 1px solid #1e293b;
+    padding: 8px 8px 0; display: flex; gap: 4px; overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 16px; border: none; border-radius: 12px 12px 0 0;
+    background: transparent; color: #94a3b8; font-weight: 700; font-size: 14px;
+    white-space: nowrap; cursor: pointer;
+  }
+  .tab.active { background: #1e293b; color: #fbbf24; }
+  main { padding: 12px; }
+  .card {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 14px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .mapa-item {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 14px;
+    padding: 14px; margin-bottom: 8px; cursor: pointer; text-align: left;
+    color: inherit; font: inherit;
+  }
+  .mapa-item:active { background: #1e293b; }
+  .mapa-item .ico { font-size: 22px; width: 36px; text-align: center; }
+  .mapa-item .t { font-weight: 700; font-size: 15px; }
+  .mapa-item .id { color: #f59e0b; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 13px; }
+  .mapa-item .note { margin-left: auto; font-size: 11px; color: #94a3b8; text-align: right; max-width: 42%; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 12px; }
+  .chip {
+    padding: 8px 12px; border-radius: 10px; white-space: nowrap; cursor: pointer;
+    background: #0f172a; border: 1px solid #1e293b; color: #cbd5e1;
+    font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 13px;
+  }
+  .chip.active { background: #d97706; border-color: #f59e0b; color: #020617; }
+  .gtitle {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+    color: #64748b; padding: 0 4px 6px;
+  }
+  .frow { display: flex; align-items: center; gap: 8px; padding: 12px 12px; }
+  .frow + .frow { border-top: 1px solid #1e293b; }
+  .frow .r { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: #f59e0b; font-size: 13px; width: 44px; flex-shrink: 0; }
+  .frow .r.dred { color: #f87171; }
+  .frow label { flex: 1; font-size: 14px; color: #e2e8f0; }
+  .frow input {
+    width: 96px; background: #020617; border: 1px solid #334155; border-radius: 10px;
+    padding: 9px 10px; text-align: right; color: #fcd34d;
+    font-family: ui-monospace, Menlo, monospace; font-size: 14px;
+  }
+  .frow input:focus { outline: none; border-color: #f59e0b; }
+  .frow input.dred { border-color: #7f1d1d; color: #fca5a5; }
+  .hint { font-size: 11.5px; color: #64748b; margin: 3px 0 0 52px; }
+  .codebox { background: #000; border: 1px solid #064e3b; border-radius: 14px; overflow: hidden; }
+  .codebox .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0f172a; padding: 8px 12px; border-bottom: 1px solid #1e293b;
+  }
+  .codebox .bar span { font-family: ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 700; color: #34d399; }
+  .codebox pre {
+    margin: 0; padding: 12px; overflow-x: auto;
+    font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; line-height: 1.6; color: #34d399;
+  }
+  .btn {
+    border: none; border-radius: 10px; padding: 8px 12px; font-weight: 700;
+    font-size: 12.5px; cursor: pointer;
+  }
+  .btn-copy { background: #047857; color: #fff; }
+  .btn-copy:active { background: #065f46; }
+  .btn-trick {
+    display: block; margin-top: 10px; background: rgba(6,78,59,.5); color: #6ee7b7;
+    border: 1px solid #059669; font-size: 12.5px;
+  }
+  .btn-reset {
+    background: transparent; color: #64748b; border: 1px solid #1e293b; font-size: 11.5px;
+  }
+  .desc-title { font-weight: 800; color: #fbbf24; font-size: 15px; margin-bottom: 4px; }
+  .desc { font-size: 13.5px; color: #cbd5e1; margin: 0; }
+  .hala { font-size: 12px; color: #94a3b8; margin: 7px 0 0; }
+  .warn { font-size: 12px; color: #fdba74; margin: 8px 0 0; }
+  .gold { background: rgba(120,53,15,.35); border: 1px solid #92400e; }
+  .gold .gt { font-weight: 800; color: #fbbf24; margin-bottom: 5px; font-size: 14px; }
+  .gold p { font-size: 13px; color: #cbd5e1; margin: 0; }
+  .arow { display: flex; gap: 12px; padding: 12px; }
+  .arow + .arow { border-top: 1px solid #1e293b; }
+  .arow .r { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: #f59e0b; min-width: 56px; flex-shrink: 0; }
+  .arow .d { font-size: 13.5px; color: #cbd5e1; }
+  .brow { padding: 12px; }
+  .brow + .brow { border-top: 1px solid #1e293b; }
+  .brow .err { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: #f87171; font-size: 13px; }
+  .brow .fix { font-size: 13.5px; color: #cbd5e1; margin-top: 3px; }
+  .muted { font-size: 13px; color: #94a3b8; padding: 2px 4px 10px; }
+  ol.safe { margin: 0; padding-left: 20px; font-size: 13.5px; color: #cbd5e1; }
+  ol.safe li { margin-bottom: 5px; }
+  code.amber { color: #fcd34d; font-family: ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌀 Makrocykle L9xx</h1>
+  <p>ściaga + generator programu — po frezersku, na PRONUM 640FC</p>
+</header>
+<nav id="nav"></nav>
+<main id="view"></main>
+<script>
+"use strict";
+
+// ================= DANE =================
+var ALFABET = [
+  ["R1", "po ile mm zjazdu na raz (warstwami — po 5, po 10…)"],
+  ["R2", "od jakiej wysokości liczysz (płaszczyzna odniesienia; zwykle 0 = powierzchnia detalu)"],
+  ["R3", "dokąd docierasz — dno (np. -25 jak w Z32)"],
+  ["R4", "posuw pionowy (w Z)"],
+  ["R5", "naddatek na wykończenie; 0 = bez wykańczania (zgrubnie i koniec)"],
+  ["R6", "kierunek jazdy: 2 = zgodnie ze wskazówkami, 3 = przeciwnie"],
+  ["R10", "na jaką wysokość wycofać na końcu"],
+  ["R11", "płaszczyzna: 0 = XY (normalnie), 1 = YZ, 2 = ZX"],
+  ["R12", "szerokość rowka (L901, L904)"],
+  ["R13", "długość rowka (L901/L902) albo kąt rozwarcia w stopniach (L904/L905 — STOPNIE, nie mm!)"],
+  ["R15", "posuw po detalu (w poziomie)"],
+  ["R18", "odstęp pierwszego otworu od punktu startu (L906)"],
+  ["R19", "krok między otworami (L906)"],
+  ["R22 / R23", "środek okręgu / punkt bazowy (X, Y)"],
+  ["R24", "promień (kieszeni, okręgu, otworu po rozfrezowaniu)"],
+  ["R25", "kąt pierwszego elementu (gdzie zacząć na kole)"],
+  ["R26", "co ile stopni; 0 = maszyna sama podzieli 360/liczba"],
+  ["R27", "ile sztuk (otworów, rowków)"],
+  ["R28", "którym cyklem wiercić: 81–89 podręcznikowo (np. 82 = z pogłębieniem); u Was pracuje L130"]
+];
+
+var BLOKADY = [
+  ["BLAD DEKL. R27", "nie podałeś liczby otworów/rowków"],
+  ["PRZEKR. LICZBA OTWOROW / ROWKOW", "kąty się nie składają w koło (np. 8 × 50° = 400° > 360°)"],
+  ["SPRAWDZ KOR. FREZA i/lub R12/R13/R24", "frez nie mieści się w rowku/kieszeni — weź mniejszy albo powiększ"],
+  ["PROMIEN FREZA <= 0", "zapomniałeś D albo korektor pusty — wpisz promień freza w korekcjach"],
+  ["R1 ZA DUZY", "warstwa grubsza niż cały rowek/kieszeń — zmniejsz R1"],
+  ["BLAD DEKLARACJI R6", "nie podałeś kierunku (2/3) tam, gdzie jest wymagany"]
+];
+
+var G = "Głębokość / posuwy", K = "Geometria";
+
+function fld(r, label, def, hint, group) {
+  return { r: r, label: label, def: String(def), hint: hint, group: group };
+}
+
+var MACROS = [
+  {
+    id: "L900", icon: "⭕", task: "Otwory równo na kole (PCD)",
+    desc: "Twój koń roboczy — to samo, co liczy kalkulator PCD, tylko prosto z pulpitu.",
+    hala: "Puzony FI 210/392, kołnierze — wszystko, co robisz z O2010 i Z32.",
+    needsD: false,
+    fields: [
+      fld("R22", "Środek okręgu X", 0, "", K),
+      fld("R23", "Środek okręgu Y", 0, "", K),
+      fld("R24", "Promień PCD", 209, "PCD 418 → wpisz połowę! (392 → 196)", K),
+      fld("R25", "Kąt pierwszego otworu", 0, "stopnie", K),
+      fld("R26", "Podział co ile stopni", 0, "0 = maszyna sama podzieli 360/liczba", K),
+      fld("R27", "Liczba otworów", 8, "", K),
+      fld("R28", "Cykl wiercenia", 130, "81–89 podręcznikowo (82 = z pogłębieniem); u Was pracuje L130 jak w Z32", K),
+      fld("F", "Posuw wiercenia F", 50, "pusty = bez F", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "0 = powierzchnia detalu", G),
+      fld("R3", "Dno", -25, "np. -25 jak w Z32", G),
+      fld("R4", "Posuw pionowy Z", 1, "", G),
+      fld("R10", "Wycofanie na końcu", 0, "", G),
+      fld("R11", "Płaszczyzna", 0, "0 = XY (normalnie)", G)
+    ],
+    gen: function (v) {
+      var f = v.F ? " F" + v.F : "";
+      return [
+        "N101 R2=" + v.R2 + " R3=" + v.R3 + " R4=" + v.R4 + " R10=" + v.R10 + " R11=" + v.R11,
+        "N102 R22=" + v.R22 + " R23=" + v.R23 + " R24=" + v.R24,
+        "N103 R25=" + v.R25 + " R26=" + v.R26 + " R27=" + v.R27 + " R28=" + v.R28 + f,
+        "N104 L900"
+      ];
+    }
+  },
+  {
+    id: "L906", icon: "📏", task: "Otwory w rzędzie po prostej",
+    desc: "Zamiast koła — rząd otworów po linii. Punkt startu, kierunek, krok — maszyna wierci cały rząd.",
+    hala: "Otwory pod prowadnice, pod śruby w jednym rzędzie, RAJAZDY FI 412.",
+    needsD: false,
+    fields: [
+      fld("R22", "Punkt startu X", 50, "", K),
+      fld("R23", "Punkt startu Y", 50, "", K),
+      fld("R25", "Kąt nachylenia linii", 0, "0 = wzdłuż X, 90 = wzdłuż Y", K),
+      fld("R18", "Odstęp 1. otworu od startu", 10, "", K),
+      fld("R19", "Krok między otworami", 100, "", K),
+      fld("R27", "Liczba otworów", 6, "", K),
+      fld("R28", "Cykl wiercenia", 130, "81–89 podręcznikowo; 130 = Wasz zakładowy (jak w Z32)", K),
+      fld("F", "Posuw wiercenia F", 50, "pusty = bez F", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno", -25, "", G),
+      fld("R4", "Posuw pionowy Z", 1, "", G),
+      fld("R10", "Wycofanie na końcu", 0, "", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      var f = v.F ? " F" + v.F : "";
+      return [
+        "N101 R2=" + v.R2 + " R3=" + v.R3 + " R4=" + v.R4 + " R10=" + v.R10 + " R11=" + v.R11,
+        "N102 R22=" + v.R22 + " R23=" + v.R23 + " R25=" + v.R25 + " R18=" + v.R18 + " R19=" + v.R19,
+        "N103 R27=" + v.R27 + " R28=" + v.R28 + f,
+        "N104 L906"
+      ];
+    }
+  },
+  {
+    id: "L903", icon: "▭", task: "Kieszeń prostokątna",
+    desc: "Maszyna sama jeździ zygzakiem (meandrem), warstwa po warstwie, od środka na zewnątrz.",
+    hala: "Kieszenie płytkie i głębokie — masz je w bibliotece jako L316/L318. Plus siedzenia, gniazda prostokątne, wcięcia.",
+    needsD: true,
+    fields: [
+      fld("R12", "Długość kieszeni", 100, "", K),
+      fld("R13", "Szerokość kieszeni", 80, "", K),
+      fld("R24", "Promień naroży", 8, "daj ~promień freza → ładne naroża", K),
+      fld("R25", "Kąt obrócenia kieszeni", 0, "stopnie", K),
+      fld("R22", "Środek kieszeni X", 0, "", K),
+      fld("R23", "Środek kieszeni Y", 0, "", K),
+      fld("R1", "Warstwa na zjazd", 10, "po ile mm na raz", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno", -25, "", G),
+      fld("R4", "Posuw pionowy Z", 100, "", G),
+      fld("R15", "Posuw poziomy", 300, "", G),
+      fld("R5", "Naddatek na wykończenie", 1, "≠ 0 = ładne wykończone ścianki; 0 = zgrubnie", G),
+      fld("R6", "Kierunek meandra", 2, "2 = zgodnie ze wskazówkami, 3 = przeciwnie", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      return [
+        "N101 R1=" + v.R1 + " R2=" + v.R2 + " R3=" + v.R3 + " R4=" + v.R4 + " R15=" + v.R15,
+        "N102 R6=" + v.R6 + " R22=" + v.R22 + " R23=" + v.R23 + " R12=" + v.R12 + " R13=" + v.R13,
+        "N103 R5=" + v.R5 + " R24=" + v.R24 + " R25=" + v.R25 + " R11=" + v.R11,
+        "N104 L903 D" + v.D
+      ];
+    }
+  },
+  {
+    id: "L930", icon: "⬤", task: "Kieszeń okrągła",
+    desc: "Okrągła kieszeń — maszyna jeździ po spirali, od środka na zewnątrz, warstwa po warstwie.",
+    hala: "Gniazda łożyskowe, okrągłe siedzenia — Twoje SIEDZENIA z L602, tylko gotowcem.",
+    needsD: true,
+    fields: [
+      fld("R24", "Promień kieszeni", 50, "Ø100 → wpisz 50", K),
+      fld("R22", "Środek X", 0, "", K),
+      fld("R23", "Środek Y", 0, "", K),
+      fld("R1", "Warstwa na zjazd", 10, "", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno", -25, "", G),
+      fld("R4", "Posuw pionowy Z", 100, "", G),
+      fld("R15", "Posuw poziomy", 300, "", G),
+      fld("R5", "Naddatek na wykończenie", 1, "≠ 0 = ładne ścianki", G),
+      fld("R6", "Kierunek", 2, "2 / 3", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      return [
+        "N101 R2=" + v.R2 + " R3=" + v.R3 + " R1=" + v.R1 + " R4=" + v.R4 + " R15=" + v.R15,
+        "N102 R6=" + v.R6 + " R22=" + v.R22 + " R23=" + v.R23 + " R5=" + v.R5 + " R24=" + v.R24,
+        "N103 R11=" + v.R11,
+        "N104 L930 D" + v.D
+      ];
+    }
+  },
+  {
+    id: "L931", icon: "🌀", task: "Powiększyć gotowy otwór",
+    desc: "Masz otwór Ø80, a trzeba Ø100? Nawiercasz Ø80 wiertłem (szybko!), a L931 rozszerza go frezem do celu — po okręgu, z fazką wejścia.",
+    hala: "Duże przelotowe otwory w puzonach, osadzenia rur — wszędzie, gdzie wiertło nie ma prawa bytu.",
+    needsD: true,
+    note: "L931 nie ma R1 — zjazd do dna jednym ruchem (half posuwem R15/2). Dlatego otwór musi być naprawdę przewiercony!",
+    fields: [
+      fld("R25", "Promień PRZED (nawiercony)", 40, "Ø80 → wpisz 40", K),
+      fld("R24", "Promień PO (docelowy)", 50, "Ø100 → wpisz 50", K),
+      fld("R22", "Środek otworu X", 50, "", K),
+      fld("R23", "Środek otworu Y", 50, "", K),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno otworu", -25, "", G),
+      fld("R5", "Naddatek na wykończenie", 1, "", G),
+      fld("R6", "Kierunek", 2, "2 / 3", G),
+      fld("R10", "Wycofanie na końcu", 0, "", G),
+      fld("R15", "Posuw krawędzi tnącej", 300, "maszyna sama koryguje posuw środka freza", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      return [
+        "N101 R2=" + v.R2 + " R3=" + v.R3 + " R5=" + v.R5 + " R6=" + v.R6 + " R10=" + v.R10,
+        "N102 R15=" + v.R15 + " R22=" + v.R22 + " R23=" + v.R23 + " R24=" + v.R24 + " R11=" + v.R11,
+        "N103 R25=" + v.R25,
+        "N104 L931 D" + v.D
+      ];
+    }
+  },
+  {
+    id: "L902", icon: "✳️", task: "Rowek promieniowy — wąski (= frez)",
+    desc: "Rowki od środka na zewnątrz, jak szprychy koła. Szerokość = średnica freza → jedno przejście tam i z powrotem.",
+    hala: "Rowki pod klucz na kołach, promieniowe prowadnice.",
+    needsD: true,
+    fields: [
+      fld("R13", "Długość rowka", 100, "mm, po promieniu", K),
+      fld("R24", "Krawędź rowka od środka", 10, "jak blisko środka zaczyna się rowek", K),
+      fld("R25", "Kąt pierwszego", 30, "stopnie", K),
+      fld("R26", "Podział co ile stopni", 60, "0 = równo (360/liczba)", K),
+      fld("R27", "Liczba rowków", 6, "", K),
+      fld("R22", "Środek koła X", 50, "", K),
+      fld("R23", "Środek koła Y", 50, "", K),
+      fld("R1", "Warstwa na zjazd", 10, "", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno", -25, "", G),
+      fld("R4", "Posuw pionowy Z", 20, "", G),
+      fld("R15", "Posuw poziomy", 40, "", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      return [
+        "N101 R1=" + v.R1 + " R2=" + v.R2 + " R3=" + v.R3 + " R4=" + v.R4 + " R11=" + v.R11,
+        "N102 R13=" + v.R13 + " R15=" + v.R15 + " R27=" + v.R27,
+        "N103 R22=" + v.R22 + " R23=" + v.R23 + " R24=" + v.R24 + " R25=" + v.R25 + " R26=" + v.R26,
+        "N104 L902 D" + v.D
+      ];
+    }
+  },
+  {
+    id: "L901", icon: "✴️", task: "Rowek promieniowy — szeroki (> frez)",
+    desc: "Jak L902, tylko rowek SZERSZY niż frez — maszyna sama jeździ po obwodzie rowka i wykańcza naroża.",
+    hala: "Szerokie kanały pod klucz, mocne szprychy.",
+    needsD: true,
+    note: "Maszyna pilnuje: długość ≥ szerokość, frez < 0,45 × szerokość (a najlepiej > 0,25 ×).",
+    fields: [
+      fld("R12", "Szerokość rowka", 20, "", K),
+      fld("R13", "Długość rowka", 100, "", K),
+      fld("R24", "Krawędź rowka od środka", 10, "", K),
+      fld("R25", "Kąt pierwszego", 30, "", K),
+      fld("R26", "Podział co ile stopni", 60, "0 = równo", K),
+      fld("R27", "Liczba rowków", 6, "", K),
+      fld("R22", "Środek koła X", 50, "", K),
+      fld("R23", "Środek koła Y", 50, "", K),
+      fld("R6", "Kierunek", 2, "2 / 3", K),
+      fld("R1", "Warstwa na zjazd", 10, "", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno", -25, "", G),
+      fld("R4", "Posuw pionowy Z", 20, "", G),
+      fld("R15", "Posuw poziomy", 40, "", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      return [
+        "N101 R1=" + v.R1 + " R2=" + v.R2 + " R3=" + v.R3 + " R4=" + v.R4 + " R11=" + v.R11,
+        "N102 R12=" + v.R12 + " R13=" + v.R13 + " R15=" + v.R15 + " R27=" + v.R27,
+        "N103 R22=" + v.R22 + " R23=" + v.R23 + " R24=" + v.R24 + " R25=" + v.R25 + " R26=" + v.R26 + " R6=" + v.R6,
+        "N104 L901 D" + v.D
+      ];
+    }
+  },
+  {
+    id: "L905", icon: "◡", task: "Szczelina na okręgu — wąska (= frez)",
+    desc: "Rowki WZDŁUŻ okręgu, jak szczeliny. Zamiast długości podajesz KĄT ROZWARCIA — ile stopni okręgu zajmuje rowek.",
+    hala: "Szczelinowe otwory wentylacyjne na kołach, rowki pod uszczelki segmentowe.",
+    needsD: true,
+    trick: true,
+    note: "R13 to STOPNIE, nie mm! Pełny pierścień: R27=1 + R13=360 🎯",
+    fields: [
+      fld("R13", "Kąt rozwarcia rowka", 50, "STOPNIE, nie mm!", K),
+      fld("R24", "Promień okręgu", 30, "", K),
+      fld("R25", "Kąt pierwszego", 0, "stopnie", K),
+      fld("R27", "Liczba szczelin", 4, "", K),
+      fld("R22", "Środek X", 0, "", K),
+      fld("R23", "Środek Y", 0, "", K),
+      fld("R1", "Warstwa na zjazd", 10, "", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno", -15, "", G),
+      fld("R4", "Posuw pionowy Z", 100, "", G),
+      fld("R15", "Posuw poziomy", 300, "", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      return [
+        "N101 R1=" + v.R1 + " R2=" + v.R2 + " R3=" + v.R3 + " R4=" + v.R4 + " R11=" + v.R11,
+        "N102 R13=" + v.R13 + " R27=" + v.R27 + " R15=" + v.R15,
+        "N103 R22=" + v.R22 + " R23=" + v.R23 + " R24=" + v.R24 + " R25=" + v.R25,
+        "N104 L905 D" + v.D
+      ];
+    }
+  },
+  {
+    id: "L904", icon: "◠", task: "Szczelina na okręgu — szeroka (> frez)",
+    desc: "Jak L905, tylko SZERSZA niż frez — maszyna wylicza przejścia i wykańcza rowek w pełnej szerokości.",
+    hala: "Szerokie szczeliny wentylacyjne, okra w kołach.",
+    needsD: true,
+    trick: true,
+    note: "Frez < 0,45 × szerokość; za mały (< 0,25 ×) → w środku zostanie niewyfrezowana wyspa!",
+    fields: [
+      fld("R12", "Szerokość rowka", 15, "mm", K),
+      fld("R13", "Kąt rozwarcia rowka", 50, "STOPNIE, nie mm!", K),
+      fld("R24", "Promień okręgu", 30, "", K),
+      fld("R25", "Kąt pierwszego", 0, "", K),
+      fld("R27", "Liczba rowków", 4, "", K),
+      fld("R22", "Środek X", 0, "", K),
+      fld("R23", "Środek Y", 0, "", K),
+      fld("R6", "Kierunek", 2, "2 / 3", K),
+      fld("R1", "Warstwa na zjazd", 10, "", G),
+      fld("R2", "Od jakiej wysokości liczysz", 0, "", G),
+      fld("R3", "Dno", -15, "", G),
+      fld("R4", "Posuw pionowy Z", 100, "", G),
+      fld("R15", "Posuw poziomy", 300, "", G),
+      fld("R11", "Płaszczyzna", 0, "", G)
+    ],
+    gen: function (v) {
+      return [
+        "N101 R1=" + v.R1 + " R2=" + v.R2 + " R3=" + v.R3 + " R4=" + v.R4 + " R6=" + v.R6,
+        "N102 R12=" + v.R12 + " R13=" + v.R13 + " R27=" + v.R27 + " R15=" + v.R15 + " R11=" + v.R11,
+        "N103 R22=" + v.R22 + " R23=" + v.R23 + " R24=" + v.R24 + " R25=" + v.R25,
+        "N104 L904 D" + v.D
+      ];
+    }
+  }
+];
+
+var MAPA = [
+  ["Otwory równo na kole (PCD)", "L900", "R28 = 130 (zakładowy)"],
+  ["Otwory w rzędzie po prostej", "L906", "R25 = kąt linii"],
+  ["Kieszeń prostokątna (jak L316/L318)", "L903", "R5 ≠ 0 = ładne ścianki"],
+  ["Kieszeń okrągła (gniazda)", "L930", "kieszeń > frez + 2 mm"],
+  ["Powiększyć gotowy otwór", "L931", "najpierw przewierć (R25), potem rozszerz (R24)"],
+  ["Rowek promieniowy, wąski", "L902", "R13 = długość (mm)"],
+  ["Rowek promieniowy, szeroki", "L901", "frez < 0,45 × szerokość"],
+  ["Szczelina na okręgu, wąska", "L905", "R13 = KĄT, nie mm!"],
+  ["Szczelina na okręgu, szeroka", "L904", "frez < 0,45 × szerokość"],
+  ["Pełny pierścień (o-ring!)", "L904", "R27=1, R13=360 🎯"]
+];
+
+// ================= STAN =================
+var LS_KEY = "makrocykle-vals-v1";
+var tab = "mapa";
+var sel = "L903";
+var vals = (function () {
+  var d = { D: "1" };
+  MACROS.forEach(function (m) {
+    m.fields.forEach(function (f) { d[m.id + "|" + f.r] = f.def; });
+  });
+  try {
+    var s = localStorage.getItem(LS_KEY);
+    if (s) {
+      var saved = JSON.parse(s);
+      Object.keys(d).forEach(function (k) { if (saved[k] !== undefined) d[k] = saved[k]; });
+    }
+  } catch (e) {}
+  return d;
+})();
+
+function saveVals() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(vals)); } catch (e) {}
+}
+function fmt(s) { return String(s === undefined || s === null ? "" : s).trim().replace(",", "."); }
+function vOf(m) {
+  var v = {};
+  m.fields.forEach(function (f) { v[f.r] = fmt(vals[m.id + "|" + f.r]); });
+  v.D = fmt(vals.D);
+  return v;
+}
+function currentMacro() {
+  for (var i = 0; i < MACROS.length; i++) if (MACROS[i].id === sel) return MACROS[i];
+  return MACROS[0];
+}
+function codeOf(m) { return m.gen(vOf(m)).join("\n"); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+// ================= AKCJE =================
+function setTab(t) { tab = t; render(); }
+function selectMacro(id) { sel = id; setTab("gen"); }
+function openMacro(id, patch) {
+  if (patch) { for (var k in patch) vals[k] = patch[k]; saveVals(); }
+  selectMacro(id);
+}
+function setVal(key, value) { vals[key] = value; saveVals(); refreshCode(); }
+function applyRing() {
+  vals[sel + "|R27"] = "1";
+  vals[sel + "|R13"] = "360";
+  saveVals();
+  render();
+}
+function resetMacro() {
+  var m = currentMacro();
+  m.fields.forEach(function (f) { vals[m.id + "|" + f.r] = f.def; });
+  saveVals();
+  render();
+}
+function copyCode() {
+  var txt = codeOf(currentMacro());
+  function done() {
+    var b = document.getElementById("copy-btn");
+    if (b) { b.textContent = "Skopiowane ✅"; setTimeout(function () { b.textContent = "📋 Kopiuj"; }, 1600); }
+  }
+  function fallback() {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {}
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done, fallback);
+  } else { fallback(); }
+}
+
+// ================= RENDER =================
+function render() {
+  var nav = document.getElementById("nav");
+  var tabs = [["mapa", "🗺️ Mapa"], ["gen", "⚙️ Generator"], ["abc", "🔤 R-ki"], ["blok", "🛑 Blokady"]];
+  nav.innerHTML = tabs.map(function (t) {
+    return '<button class="tab' + (tab === t[0] ? " active" : "") + '" onclick="setTab(\'' + t[0] + '\')">' + t[1] + "</button>";
+  }).join("");
+
+  var v = document.getElementById("view");
+  if (tab === "mapa") v.innerHTML = viewMapa();
+  else if (tab === "gen") v.innerHTML = viewGen();
+  else if (tab === "abc") v.innerHTML = viewAbc();
+  else v.innerHTML = viewBlok();
+  window.scrollTo(0, 0);
+}
+
+function viewMapa() {
+  var h = '<p class="muted">Klikasz zadanie → apka otwiera generator z gotowymi wartościami. Zmieniasz wymiary, kopiujesz program.</p>';
+  h += MAPA.map(function (row) {
+    var m = null;
+    MACROS.forEach(function (x) { if (x.id === row[1]) m = x; });
+    var isRing = row[0].indexOf("pierścień") !== -1;
+    var act = isRing
+      ? "openMacro('L904', {'L904|R27':'1','L904|R13':'360'})"
+      : "openMacro('" + row[1] + "')";
+    return '<button class="mapa-item" onclick="' + act + '">' +
+      '<span class="ico">' + m.icon + "</span>" +
+      '<span><span class="t">' + esc(row[0]) + '</span><br><span class="id">' + row[1] + "</span></span>" +
+      '<span class="note">' + esc(row[2]) + "</span></button>";
+  }).join("");
+  h += '<div class="card gold"><div class="gt">🥇 Złota zasada</div>' +
+    "<p>Makrocykle <b>frezujące</b> wołają <b>D</b> z numerem korektora (np. <code class=\"amber\">L903 D1</code>) — tam siedzi promień freza. Bez D maszyna krzyknie <code class=\"amber\">PROMIEN FREZA &lt;= 0</code> i stanie.</p></div>";
+  return h;
+}
+
+function viewGen() {
+  var m = currentMacro();
+  var h = '<div class="chips">' + MACROS.map(function (x) {
+    return '<button class="chip' + (sel === x.id ? " active" : "") + '" onclick="selectMacro(\'' + x.id + '\')">' + x.icon + " " + x.id + "</button>";
+  }).join("") + "</div>";
+
+  h += '<div class="card"><div class="desc-title">' + m.icon + " " + m.id + " — " + esc(m.task) + "</div>" +
+    '<p class="desc">' + esc(m.desc) + "</p>" +
+    '<p class="hala">🏭 <b>Na hali:</b> ' + esc(m.hala) + "</p>";
+  if (m.note) h += '<p class="warn">⚠️ ' + esc(m.note) + "</p>";
+  if (m.trick) h += '<button class="btn btn-trick" onclick="applyRing()">🎯 Pełny pierścień: R27=1, R13=360</button>';
+  h += '<div style="text-align:right;margin-top:10px"><button class="btn btn-reset" onclick="resetMacro()">↺ wartości domyślne</button></div>';
+  h += "</div>";
+
+  [K, G].forEach(function (grp) {
+    h += '<div class="gtitle">' + grp + '</div><div class="card" style="padding:0">';
+    m.fields.forEach(function (f) {
+      if (f.group !== grp) return;
+      var key = m.id + "|" + f.r;
+      h += '<div class="frow"><span class="r">' + f.r + '</span><label>' + esc(f.label) + '</label>' +
+        '<input inputmode="decimal" value="' + esc(vals[key] === undefined ? f.def : vals[key]) + '" oninput="setVal(\'' + key + '\', this.value)"></div>';
+      if (f.hint) h += '<div class="hint" style="padding:0 12px 10px;margin-top:-8px">' + esc(f.hint) + "</div>";
+    });
+    if (grp === G && m.needsD) {
+      h += '<div class="frow"><span class="r dred">D</span><label>Numer korektora promienia freza</label>' +
+        '<input class="dred" inputmode="numeric" value="' + esc(vals.D) + '" oninput="setVal(\'D\', this.value)"></div>' +
+        '<div class="hint" style="padding:0 12px 10px;margin-top:-8px">wymagane — bez tego maszyna stanie!</div>';
+    }
+    h += "</div>";
+  });
+
+  h += '<div class="codebox"><div class="bar"><span id="call-chip"></span>' +
+    '<button class="btn btn-copy" id="copy-btn" onclick="copyCode()">📋 Kopiuj</button></div>' +
+    '<pre id="code-pre"></pre></div>';
+  h += '<p class="muted" style="padding-top:10px">Wstaw między narzędzie a M30. Pierwszy raz: skrawek, wolno, palec na feed override! 🔧</p>';
+  return h;
+}
+
+function viewAbc() {
+  var h = '<p class="muted">Uczysz się RAZ — wszystkie makrocykle używają tego samego alfabetu.</p><div class="card" style="padding:0">';
+  h += ALFABET.map(function (a) {
+    return '<div class="arow"><span class="r">' + a[0] + '</span><span class="d">' + esc(a[1]) + "</span></div>";
+  }).join("");
+  return h + "</div>";
+}
+
+function viewBlok() {
+  var h = '<p class="muted">Co krzyczy maszyna → co poprawić. Tłumaczenie komunikatów po frezersku.</p><div class="card" style="padding:0">';
+  h += BLOKADY.map(function (b) {
+    return '<div class="brow"><div class="err">' + esc(b[0]) + '</div><div class="fix">→ ' + esc(b[1]) + "</div></div>";
+  }).join("");
+  h += "</div>";
+  h += '<div class="card"><div class="desc-title">🔧 Bezpieczny start</div><ol class="safe">' +
+    "<li>R2 = +5 nad detalem → łagodny zjazd</li>" +
+    "<li>Pierwszy raz na skrawku, feed override w garści</li>" +
+    "<li>R1 mały (5–10 mm) — dopiero potem zwiększaj</li>" +
+    "<li>Przeszedł? Masz nowy robot na hali, za darmo, od 2014 roku 🍒</li></ol></div>";
+  return h;
+}
+
+function refreshCode() {
+  var m = currentMacro();
+  var pre = document.getElementById("code-pre");
+  var chip = document.getElementById("call-chip");
+  if (pre) pre.textContent = codeOf(m);
+  if (chip) chip.textContent = m.id + (m.needsD ? " D" + fmt(vals.D) : "") + " — gotowy program";
+}
+
+render();
+refreshCode();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
