@@ -232,7 +232,8 @@ var MACROS = [
   {
     id: "L903", icon: "▭", task: "Kieszeń prostokątna",
     desc: "Maszyna sama jeździ zygzakiem (meandrem), warstwa po warstwie, od środka na zewnątrz.",
-    hala: "Kieszenie płytkie i głębokie — masz je w bibliotece jako L316/L318. Plus siedzenia, gniazda prostokątne, wcięcia.",
+    hala: "Kieszenie pod zamki — realnie z hali: płytkie Z-15 to L316 (Z316 woła L316 P3 — 3 razy po 5 mm), głębokie Z-28 to L318 (Z318 woła L318 P7 — 7 razy po 4 mm). L903 zrobi to samo jednym wołaniem. Plus siedzenia, gniazda prostokątne, wcięcia.",
+    note: "Sposób z hali: podprogram z G91 Z-5 na przejście i P3 w głównym = 3 × 5 mm. W L903 to samo: R1 = 5 (warstwa), R3 = -15 (dno) → 3 warstwy automatycznie. Głęboka: R1 = 4, R3 = -28.",
     needsD: true,
     fields: [
       fld("R12", "Długość kieszeni", 100, "", K),
@@ -442,7 +443,7 @@ var MACROS = [
 var MAPA = [
   ["Otwory równo na kole (PCD)", "L900", "R28 = 130 (zakładowy)"],
   ["Otwory w rzędzie po prostej", "L906", "R25 = kąt linii"],
-  ["Kieszeń prostokątna (jak L316/L318)", "L903", "R5 ≠ 0 = ładne ścianki"],
+  ["Kieszeń prostokątna (jak L316/L318)", "L903", "R3 = dno: -15 / -28 z hali"],
   ["Kieszeń okrągła (gniazda)", "L930", "kieszeń > frez + 2 mm"],
   ["Powiększyć gotowy otwór", "L931", "najpierw przewierć (R25), potem rozszerz (R24)"],
   ["Rowek promieniowy, wąski", "L902", "R13 = długość (mm)"],
@@ -645,3 +646,4 @@ if ("serviceWorker" in navigator) {
 </script>
 </body>
 </html>
+
